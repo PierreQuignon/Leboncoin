@@ -1,0 +1,18 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://db:5432/leboncoin
+    username: postgres
+    password: postgres
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    open-in-view: false
+
+server:
+  port: 8080
+
+# Configuration JWT
+jwt:
+  secret: VotreSecretJWTSuperLongEtSecurisePourLaProductionDevraitEtreDansUnFichierEnvironnement
+  expiration: 86400000 # 24 heures en millisecondes
