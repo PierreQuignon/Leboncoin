@@ -3,6 +3,7 @@ package com.leboncoin.config;
 import com.leboncoin.security.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -36,13 +37,9 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.disable())
                 .authorizeHttpRequests(auth -> auth
-                // Routes publiques (pas d'authentification)
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/categories/**").permitAll()
-                .requestMatchers("/api/ads/search").permitAll()
-                .requestMatchers("/api/ads/{id}").permitAll()
-                .requestMatchers("/api/ads").permitAll()
-                // Toutes les autres routes nécessitent une authentification
+                .requestMatchers(HttpMethod.GET, "/api/ads/**").permitAll()
                 .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session

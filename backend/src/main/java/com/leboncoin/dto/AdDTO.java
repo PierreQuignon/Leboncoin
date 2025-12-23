@@ -1,5 +1,6 @@
 package com.leboncoin.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.leboncoin.entity.CategoryEnum;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -37,7 +38,11 @@ public class AdDTO {
     @Positive(message = "Price must be positive")
     private Integer price;
 
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private List<String> images;
+
+    @JsonProperty("imageObjectNames")
+    private List<String> imageObjectNames;
 
     @NotNull(message = "Category is required")
     private CategoryEnum category;
@@ -50,12 +55,13 @@ public class AdDTO {
     public AdDTO() {
     }
 
-    public AdDTO(Integer id, String title, String description, Integer price, List<String> images, CategoryEnum category, Integer userId, String userEmail) {
+    public AdDTO(Integer id, String title, String description, Integer price, List<String> images, List<String> imageObjectNames, CategoryEnum category, Integer userId, String userEmail) {
         this.id = id;
         this.title = title;
         this.description = description;
         this.price = price;
         this.images = images;
+        this.imageObjectNames = imageObjectNames;
         this.category = category;
         this.userId = userId;
         this.userEmail = userEmail;
@@ -100,6 +106,14 @@ public class AdDTO {
 
     public void setImages(List<String> images) {
         this.images = images;
+    }
+
+    public List<String> getImageObjectNames() {
+        return imageObjectNames;
+    }
+
+    public void setImageObjectNames(List<String> imageObjectNames) {
+        this.imageObjectNames = imageObjectNames;
     }
 
     public CategoryEnum getCategory() {

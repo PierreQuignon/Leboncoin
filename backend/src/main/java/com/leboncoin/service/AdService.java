@@ -7,6 +7,7 @@ import com.leboncoin.entity.User;
 import com.leboncoin.repository.AdRepository;
 import com.leboncoin.repository.CategoryRepository;
 import com.leboncoin.repository.UserRepository;
+import com.leboncoin.storage.ObjectStorageService;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -17,8 +18,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
+
+import org.springframework.util.StringUtils;
 
 /**
  * 🧠 SERVICE - Couche de logique métier
@@ -36,11 +41,14 @@ public class AdService {
     private final AdRepository adRepository;
     private final CategoryRepository categoryRepository;
     private final UserRepository userRepository;
+    private final ObjectStorageService objectStorageService;
 
-    public AdService(AdRepository adRepository, CategoryRepository categoryRepository, UserRepository userRepository) {
+    public AdService(AdRepository adRepository, CategoryRepository categoryRepository, UserRepository userRepository,
+            ObjectStorageService objectStorageService) {
         this.adRepository = adRepository;
         this.categoryRepository = categoryRepository;
         this.userRepository = userRepository;
+        this.objectStorageService = objectStorageService;
     }
 
     @Transactional
@@ -56,7 +64,7 @@ public class AdService {
         ad.setTitle(adDTO.getTitle());
         ad.setDescription(adDTO.getDescription());
         ad.setPrice(adDTO.getPrice());
-        ad.setImages(adDTO.getImages());
+        ad.setImages(sanitizeImageKeys(adDTO.getImageObjectNames()));
         ad.setCategory(category);
         ad.setUser(user);
 
@@ -89,6 +97,7 @@ public class AdService {
         }
 
         AdDTO deletedAdDTO = convertToDTO(ad);
+        objectStorageService.deleteObjects(ad.getImages());
         adRepository.delete(ad);
         return deletedAdDTO;
     }
@@ -105,10 +114,14 @@ public class AdService {
         Category category = categoryRepository.findByName(adDTO.getCategory())
                 .orElseThrow(() -> new RuntimeException("Category not found: " + adDTO.getCategory()));
 
+        List<String> incomingImages = sanitizeImageKeys(adDTO.getImageObjectNames());
+        List<String> existingImages = ad.getImages() != null ? new ArrayList<>(ad.getImages()) : new ArrayList<>();
+        deleteRemovedObjects(existingImages, incomingImages);
+
         ad.setTitle(adDTO.getTitle());
         ad.setDescription(adDTO.getDescription());
         ad.setPrice(adDTO.getPrice());
-        ad.setImages(adDTO.getImages());
+        ad.setImages(incomingImages);
         ad.setCategory(category);
 
         Ad updatedAd = adRepository.save(ad);
@@ -159,10 +172,35 @@ public class AdService {
         dto.setTitle(ad.getTitle());
         dto.setDescription(ad.getDescription());
         dto.setPrice(ad.getPrice());
-        dto.setImages(ad.getImages());
+        List<String> storedImages = ad.getImages() != null ? ad.getImages() : Collections.emptyList();
+        dto.setImageObjectNames(new ArrayList<>(storedImages));
+        dto.setImages(objectStorageService.generatePresignedGetUrls(storedImages));
         dto.setCategory(ad.getCategory().getName());
         dto.setUserId(ad.getUser().getId());
         dto.setUserEmail(ad.getUser().getEmail());
         return dto;
+    }
+
+    private List<String> sanitizeImageKeys(List<String> imageKeys) {
+        if (imageKeys == null || imageKeys.isEmpty()) {
+            return new ArrayList<>();
+        }
+        return imageKeys.stream()
+                .filter(StringUtils::hasText)
+                .map(String::trim)
+                .distinct()
+                .collect(Collectors.toCollection(ArrayList::new));
+    }
+
+    private void deleteRemovedObjects(List<String> existing, List<String> incoming) {
+        if (existing == null || existing.isEmpty()) {
+            return;
+        }
+        Set<String> incomingSet = Set.copyOf(incoming == null ? Collections.emptyList() : incoming);
+        for (String objectName : existing) {
+            if (!incomingSet.contains(objectName)) {
+                objectStorageService.deleteObject(objectName);
+            }
+        }
     }
 }
