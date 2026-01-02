@@ -125,12 +125,20 @@ public class MinioObjectStorageService implements ObjectStorageService {
         }
         try {
             int expirySeconds = Math.toIntExact(clampPresignedExpiry(properties.getPresignedUrlDuration()));
-            return minioClient.getPresignedObjectUrl(GetPresignedObjectUrlArgs.builder()
+            String presignedUrl = minioClient.getPresignedObjectUrl(GetPresignedObjectUrlArgs.builder()
                     .bucket(properties.getBucket())
                     .object(objectName)
                     .method(Method.GET)
                     .expiry(expirySeconds)
                     .build());
+
+            String internalEndpoint = properties.getEndpoint();
+            String externalEndpoint = properties.getExternalEndpoint();
+            if (!internalEndpoint.equals(externalEndpoint)) {
+                presignedUrl = presignedUrl.replace(internalEndpoint, externalEndpoint);
+            }
+
+            return presignedUrl;
         } catch (Exception e) {
             throw new StorageException("Unable to generate presigned URL for object %s".formatted(objectName), e);
         }
