@@ -42,13 +42,24 @@ services:
       MINIO_PRESIGNED_URL_DURATION: ${MINIO_PRESIGNED_URL_DURATION:-PT1H}
     ports:
       - "8081:8080"
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/pom.xml:/app/pom.xml
+      - maven_cache:/root/.m2
 
   frontend:
     build: ./frontend
     depends_on:
       - backend
     ports:
-      - "4200:80"
+      - "4200:4200"
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+      - ./frontend/angular.json:/app/angular.json
+      - ./frontend/tsconfig.json:/app/tsconfig.json
+      - ./frontend/tsconfig.app.json:/app/tsconfig.app.json
+      - node_modules:/app/node_modules
 
   pgadmin:
     image: dpage/pgadmin4:latest
@@ -63,3 +74,5 @@ services:
 volumes:
   postgres_data:
   minio_data:
+  maven_cache:
+  node_modules:
