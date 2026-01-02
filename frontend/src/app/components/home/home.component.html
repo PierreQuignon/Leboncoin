@@ -1,0 +1,26 @@
+<div class="home-container">
+  <mat-toolbar color="primary">
+    <span>Leboncoin</span>
+    <span class="spacer"></span>
+    @if (authService.currentUser()) {
+      <span class="user-email">{{ authService.currentUser()?.email }}</span>
+    }
+    <button mat-icon-button (click)="logout()">
+      <mat-icon>logout</mat-icon>
+    </button>
+  </mat-toolbar>
+
+  <div class="content">
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>Bienvenue sur Leboncoin !</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <p>Vous êtes maintenant connecté.</p>
+        @if (authService.currentUser()) {
+          <p>Email : <strong>{{ authService.currentUser()?.email }}</strong></p>
+        }
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>
